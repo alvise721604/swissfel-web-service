@@ -1,0 +1,2 @@
+auth       include      password-auth
+account    include      password-auth
