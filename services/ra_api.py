@@ -102,6 +102,7 @@ def fetch_cluster_status() -> list[dict]:
         response_json = None
         try: 
             response_json = response.json()
+            logger.debug(f"[GET] Json Service Response=[{response_json}]")
         except Exception as err:
             message = f"Error deserializing the response string into a json object: {err}"
             logger.error( message )
@@ -124,7 +125,7 @@ def fetch_cluster_status() -> list[dict]:
             this_partition['res']              = subjson['resources']
             this_partition['state']            = subjson['state']
             this_partition['max_job_duration'] = subjson['max_job_time']
-            this_partition['nodes']            = subjson['configured_nodes']
+            this_partition['configured_nodes'] = subjson['configured_nodes']
             partitions.append(this_partition)
 
         return partitions
