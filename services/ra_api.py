@@ -1,7 +1,8 @@
 from datetime import datetime, timedelta
 
 from requests.auth import HTTPBasicAuth
-
+from fastapi import HTTPException
+from http import HTTPStatus
 from config import settings
 from services.http_client import request_json
 
@@ -94,32 +95,47 @@ def fetch_cluster_status() -> list[dict]:
         logger.error( message )  # log con stack trace
         raise RAApiError( message )
     
-    response_json = None
-    try: 
-        response_json = response.json()
-    except Exception as err:
-        message = f"Error deserializing the response string into a json object: {err}"
-        logger.error( message )
-        raise RAApiError( message )
+    logger.debug(f"[GET] Service Response=[{response}]")
 
-    if 'data' not in response_json:
-        message = "Malformed response from Service: 'data' is missing the json response"
-        logger.error( message )
-        raise RAApiMalformedServiceResponse( message )
+    if response.status_code == 200:
 
-    data = response_json['data']
+        response_json = None
+        try: 
+            response_json = response.json()
+        except Exception as err:
+            message = f"Error deserializing the response string into a json object: {err}"
+            logger.error( message )
+            raise RAApiError( message )
 
-    partitions = []
-    for item, subjson in data.items():
-        this_partition  = {}
-        this_partition['name']             = item
-        this_partition['totcores']         = subjson['cores']
-        this_partition['totnodes']         = subjson['nodes']
-        this_partition['totgpus']          = subjson['gpus']
-        this_partition['res']              = subjson['resources']
-        this_partition['state']            = subjson['state']
-        this_partition['max_job_duration'] = subjson['max_job_time']
-        this_partition['nodes']            = subjson['configured_nodes']
-        partitions.append(this_partition)
+        if 'data' not in response_json:
+            message = "Malformed response from Service: 'data' is missing the json response"
+            logger.error( message )
+            raise RAApiMalformedServiceResponse( message )
 
-    return partitions
+        data = response_json['data']
+
+        partitions = []
+        for item, subjson in data.items():
+            this_partition  = {}
+            this_partition['name']             = item
+            this_partition['totcores']         = subjson['cores']
+            this_partition['totnodes']         = subjson['nodes']
+            this_partition['totgpus']          = subjson['gpus']
+            this_partition['res']              = subjson['resources']
+            this_partition['state']            = subjson['state']
+            this_partition['max_job_duration'] = subjson['max_job_time']
+            this_partition['nodes']            = subjson['configured_nodes']
+            partitions.append(this_partition)
+
+        return partitions
+    
+    else:
+        raise RAApiError (
+             HTTPException(
+                status_code=response.status_code,
+                detail = {
+                    'message': f"HTTP code {response.status_code}. {HTTPStatus(response.status_code).name}: {HTTPStatus(response.status_code).description}",
+                    'errors': f"HTTP code {response.status_code}. {HTTPStatus(response.status_code).name}: {HTTPStatus(response.status_code).description}"
+                }
+            )
+        )
