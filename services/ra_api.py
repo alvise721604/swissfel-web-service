@@ -5,6 +5,12 @@ from requests.auth import HTTPBasicAuth
 from config import settings
 from services.http_client import request_json
 
+from logzero import logger
+#import connection
+import secrets_sf
+import requests
+import os
+
 
 class RAApiError(Exception):
     pass
@@ -19,6 +25,12 @@ class RAApiTimeoutError(RAApiError):
 
 
 class RAApiRequestError(RAApiError):
+    pass
+
+class RAApiConnectionError(RAApiError):
+    pass
+
+class RAApiMalformedServiceResponse(RAApiError):
     pass
 
 
@@ -62,21 +74,52 @@ async def create_reservation(pgroup: str, partition: str, nodes: int, days: int)
 
 
 def fetch_cluster_status() -> list[dict]:
-    url = f'{settings.ra_api_base_url}/status'
+    url = settings.ra_api_base_url
+    logger.debug(f"[GET] Contacting url {url}")
+    headers = { "Content-Type": "application/json", "apikey": f"{secrets_sf.tokens['ra_api_admin_token']}" }
+    #code, json_result = connection.get( url, data, None )
 
-    try:
-        data = request_json(
-            'GET',
-            url,
-            auth=_auth(),
-        )
-        if isinstance(data, list):
-            return data
-    except Exception:
-        pass
+    try:   
+        response = requests.get(url, headers=headers, json=None, verify=False,timeout=(5, 30))
+    except requests.exceptions.ConnectionError as err:
+        message = f"Connection error: {err}"
+        logger.error( message )
+        raise RAApiConnectionError( message )
+    except requests.exceptions.RequestException as err:
+        message = f"Connection error: {err}"
+        logger.error( message )
+        raise RAApiRequestError( message )
+    except Exception as err:
+        message = f"Unexpected error: {err}"
+        logger.error( message )  # log con stack trace
+        raise RAApiError( message )
+    
+    response_json = None
+    try: 
+        response_json = response.json()
+    except Exception as err:
+        message = f"Error deserializing the response string into a json object: {err}"
+        logger.error( message )
+        raise RAApiError( message )
 
-    return [
-        {'partition': 'debug', 'nodes': 'cn001,cn002', 'reservations': 'p12345_debug'},
-        {'partition': 'short', 'nodes': 'cn010,cn011,cn012', 'reservations': ''},
-        {'partition': 'long', 'nodes': 'cn020,cn021', 'reservations': 'p54321_long'},
-    ]
+    if 'data' not in response_json:
+        message = "Malformed response from Service: 'data' is missing the json response"
+        logger.error( message )
+        raise RAApiMalformedServiceResponse( message )
+
+    data = response_json['data']
+
+    partitions = []
+    for item, subjson in data.items():
+        this_partition  = {}
+        this_partition['name']             = item
+        this_partition['totcores']         = subjson['cores']
+        this_partition['totnodes']         = subjson['nodes']
+        this_partition['totgpus']          = subjson['gpus']
+        this_partition['res']              = subjson['resources']
+        this_partition['state']            = subjson['state']
+        this_partition['max_job_duration'] = subjson['max_job_time']
+        this_partition['nodes']            = subjson['configured_nodes']
+        partitions.append(this_partition)
+
+    return partitions
