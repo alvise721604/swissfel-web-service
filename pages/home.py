@@ -11,9 +11,19 @@ def build_home(request: Request) -> None:
 
         with ui.row().classes('gap-4'):
             with ui.card().classes('w-80'):
+                ui.label('List Reservations').classes('text-lg font-semibold')
+                ui.label('List Slurm reservations')
+                ui.button('Open', on_click=lambda: ui.navigate.to('/listreservations'))
+
+            with ui.card().classes('w-80'):
                 ui.label('Create Reservation').classes('text-lg font-semibold')
-                ui.label('Create reservation Slurm')
-                ui.button('Open', on_click=lambda: ui.navigate.to('/reservations'))
+                ui.label('Create Slurm reservation')
+                ui.button('Open', on_click=lambda: ui.navigate.to('/createreservations'))
+
+            with ui.card().classes('w-80'):
+                ui.label('Delete Reservation').classes('text-lg font-semibold')
+                ui.label('Delete Slurm reservation')
+                ui.button('Open', on_click=lambda: ui.navigate.to('/deletereservation'))
 
             with ui.card().classes('w-80'):
                 ui.label('Cluster Status').classes('text-lg font-semibold')

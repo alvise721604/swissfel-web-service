@@ -6,12 +6,12 @@ from models import ReservationForm
 from pages.common import page_container
 from services.auth import get_current_username
 from services.ldap_service import user_can_manage_pgroup
-from services.ra_api import create_reservation
+from services.ra_api import delete_reservation
 
 
-def build_reservations_page(request: Request) -> None:
-    with page_container('Create Reservation', request):
-        ui.label('Create Slurm Reservation').classes('text-2xl font-bold')
+def delete_reservation_page(request: Request) -> None:
+    with page_container('Delete Reservation', request):
+        ui.label('Delete Slurm Reservation').classes('text-2xl font-bold')
         result_box = ui.column().classes('w-full')
 
         with ui.card().classes('w-full max-w-xl'):

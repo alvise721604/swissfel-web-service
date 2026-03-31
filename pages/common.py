@@ -14,9 +14,12 @@ def header(title: str, request: Request) -> None:
         with ui.row().classes('items-center gap-2'):
             ui.label(f'User: {username}').classes('text-sm')
             ui.button('Home', on_click=lambda: ui.navigate.to('/'))
-            ui.button('Reservations', on_click=lambda: ui.navigate.to('/reservations'))
+            ui.button('Reservation Create', on_click=lambda: ui.navigate.to('/createreservation'))
+            ui.button('Reservation Delete', on_click=lambda: ui.navigate.to('/deletereservation'))
+            ui.button('Reservations List', on_click=lambda: ui.navigate.to('/listreservations'))
+            
             ui.button('Status', on_click=lambda: ui.navigate.to('/status'))
-            ui.button('Cleanup', on_click=lambda: ui.navigate.to('/cleanup'))
+            ui.button('Pgroup Cleanup', on_click=lambda: ui.navigate.to('/cleanup'))
 
 
 @contextmanager

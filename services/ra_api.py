@@ -16,14 +16,11 @@ import os
 class RAApiError(Exception):
     pass
 
-
 class RAApiAuthError(RAApiError):
     pass
 
-
 class RAApiTimeoutError(RAApiError):
     pass
-
 
 class RAApiRequestError(RAApiError):
     pass
@@ -34,13 +31,17 @@ class RAApiConnectionError(RAApiError):
 class RAApiMalformedServiceResponse(RAApiError):
     pass
 
-
+#_________________________________________________________________________________
 def _auth() -> HTTPBasicAuth | None:
     if settings.ra_api_username and settings.ra_api_password:
         return HTTPBasicAuth(settings.ra_api_username, settings.ra_api_password)
     return None
 
+#_________________________________________________________________________________
+async def delete_reservation(pgroup: str, partition: str, nodes: int, days: int) -> dict:
+    pass
 
+#_________________________________________________________________________________
 async def create_reservation(pgroup: str, partition: str, nodes: int, days: int) -> dict:
     url = f'{settings.ra_api_base_url}/reservations'
     payload = {
@@ -73,7 +74,7 @@ async def create_reservation(pgroup: str, partition: str, nodes: int, days: int)
             'status': 'created (stub)',
         }
 
-
+#_________________________________________________________________________________
 def fetch_cluster_status() -> list[dict]:
     url = settings.ra_api_base_url
     logger.debug(f"[GET] Contacting url {url}")
@@ -140,3 +141,38 @@ def fetch_cluster_status() -> list[dict]:
                 }
             )
         )
+    
+#_________________________________________________________________________________
+def fetch_reservation_details(reservation_name: str) -> dict:
+    """Stub iniziale; poi qui metterai la vera REST call."""
+    fake_data = {
+        'res-admin-001': {
+            'name': 'res-admin-001',
+            'owner': 'dorigo_a',
+            'partition': 'admin',
+            'start_time': '2026-03-31 08:00',
+            'end_time': '2026-03-31 18:00',
+            'state': 'ACTIVE',
+            'nodes': 'ra-c-[051-053]',
+        },
+        'res-gpu-002': {
+            'name': 'res-gpu-002',
+            'owner': 'dorigo_a',
+            'partition': 'gpu',
+            'start_time': '2026-03-31 09:00',
+            'end_time': '2026-03-31 12:00',
+            'state': 'PLANNED',
+            'nodes': 'ra-gpu-[001-002]',
+        },
+        'res-weekend-003': {
+            'name': 'res-weekend-003',
+            'owner': 'guest01',
+            'partition': 'week',
+            'start_time': '2026-04-04 00:00',
+            'end_time': '2026-04-05 23:59',
+            'state': 'PLANNED',
+            'nodes': 'ra-c-[101-110]',
+        },
+    }
+
+    return fake_data.get(reservation_name, {})
