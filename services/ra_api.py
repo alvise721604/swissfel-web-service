@@ -143,36 +143,51 @@ def fetch_cluster_status() -> list[dict]:
         )
     
 #_________________________________________________________________________________
-def fetch_reservation_details(reservation_name: str) -> dict:
-    """Stub iniziale; poi qui metterai la vera REST call."""
-    fake_data = {
-        'res-admin-001': {
-            'name': 'res-admin-001',
-            'owner': 'dorigo_a',
-            'partition': 'admin',
-            'start_time': '2026-03-31 08:00',
-            'end_time': '2026-03-31 18:00',
-            'state': 'ACTIVE',
-            'nodes': 'ra-c-[051-053]',
-        },
-        'res-gpu-002': {
-            'name': 'res-gpu-002',
-            'owner': 'dorigo_a',
-            'partition': 'gpu',
-            'start_time': '2026-03-31 09:00',
-            'end_time': '2026-03-31 12:00',
-            'state': 'PLANNED',
-            'nodes': 'ra-gpu-[001-002]',
-        },
-        'res-weekend-003': {
-            'name': 'res-weekend-003',
-            'owner': 'guest01',
-            'partition': 'week',
-            'start_time': '2026-04-04 00:00',
-            'end_time': '2026-04-05 23:59',
-            'state': 'PLANNED',
-            'nodes': 'ra-c-[101-110]',
-        },
-    }
+def fetch_reservations_list( ) -> dict:
+    #url = f"{ra_api_proto}://{ra_api_host}:{ra_api_port}/compute/requests/{os.getenv('__HACK__SFWEBGUI_SLURM_CLUSTER__', 'ra')}"
+    url = f"{settings.ra_api_base_url}/requests/ra"
+    headers = { "Content-Type": "application/json", "apikey": f"{secrets_sf.tokens['ra_api_admin_token']}" }
+    
+    try:   
+        response = requests.get(url, headers=headers, json=None, verify=False,timeout=(5, 30))
+    except requests.exceptions.ConnectionError as err:
+        message = f"Connection error: {err}"
+        logger.error( message )
+        raise RAApiConnectionError( message )
+    except requests.exceptions.RequestException as err:
+        message = f"Connection error: {err}"
+        logger.error( message )
+        raise RAApiRequestError( message )
+    except Exception as err:
+        message = f"Unexpected error: {err}"
+        logger.error( message )  # log con stack trace
+        raise RAApiError( message )
+    
+    logger.debug(f"[GET] Service Response=[{response}]")
+    
+    if response.status_code >= 500:
+        try:
+            detail = response.json().get("detail", response.text, timeout=(5, 30))
+        except ValueError:
+            detail = response.text
+        mex = f"Service unavailable/unreachable. HTTP error is {response.status_code} - detail: {detail}"
+        logger.error(mex)
+        return False, {"error": mex}
 
-    return fake_data.get(reservation_name, {})
+    response_json = None
+    try: 
+        response_json = response.json()
+    except Exception as err:
+        mex = f"Error deserializing the response string into a json object: {err}"
+        logger.error(mex)
+        return False, {"error": mex}
+
+    logger.debug(f"data={response_json}")
+
+    if 'data' not in response_json:
+        mex = "Malformed answer from Service: 'data' is missing the json output"
+        logger.error(mex)
+        return False, {"error": mex}
+
+    data = response.json()['data']
+    return data

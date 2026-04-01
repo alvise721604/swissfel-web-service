@@ -16,7 +16,8 @@ class Settings:
     max_days: int = 30
 
     #ra_api_base_url: str = os.getenv('RA_API_BASE_URL', 'https://ra-s-004.psi.ch/compute/clusters/ra')
-    ra_api_base_url: str = os.getenv('RA_API_BASE_URL', 'http://localhost:8000/compute/clusters/ra')
+    #ra_api_base_url: str = os.getenv('RA_API_BASE_URL', 'http://localhost:8000/compute/clusters/ra')
+    ra_api_base_url: str = os.getenv('RA_API_BASE_URL', 'http://localhost:8000/compute')
     ra_api_username: str = os.getenv('RA_API_USERNAME', '')
     ra_api_password: str = os.getenv('RA_API_PASSWORD', '')
 
